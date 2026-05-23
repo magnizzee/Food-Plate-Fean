@@ -60,6 +60,14 @@
             font-size: 2.5em;
         }
 
+        .controls-top {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+
         .music-toggle {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -78,6 +86,17 @@
         .music-toggle:hover {
             transform: scale(1.1);
             box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .volume-control input[type="range"] {
+            width: 100px;
+            cursor: pointer;
         }
 
         .score {
@@ -109,9 +128,13 @@
             position: relative;
         }
 
-        .card:hover:not(.matched) {
+        .card:hover:not(.matched):not(:disabled) {
             transform: scale(1.05);
             box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .card:disabled {
+            cursor: not-allowed;
         }
 
         .card-back {
@@ -151,6 +174,17 @@
         .card.matched {
             opacity: 0.5;
             cursor: not-allowed;
+        }
+
+        .card-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f0f0f0;
+            color: #999;
+            font-size: 1em;
         }
 
         .controls {
@@ -196,6 +230,7 @@
 
             .header {
                 gap: 10px;
+                flex-direction: column;
             }
 
             .header-center {
@@ -209,6 +244,15 @@
 
             h1 {
                 font-size: 1.8em;
+            }
+
+            .controls-top {
+                justify-content: center;
+                margin-bottom: 15px;
+            }
+
+            .volume-control input[type="range"] {
+                width: 80px;
             }
 
             .game-board {
@@ -231,20 +275,25 @@
 <body>
     <div class="container">
         <div class="header">
-            <button class="music-toggle" id="musicToggle" onclick="toggleBackgroundMusic()">🔊</button>
-            <div class="header-center">
-                <img src="images/IMG_5596.jpeg" alt="Food Icon" class="header-image" onerror="this.style.display='none'">
-                <h1>🍽️ Food Plate Fean</h1>
-                <img src="images/IMG_5596.jpeg" alt="Food Icon" class="header-image" onerror="this.style.display='none'">
-            </div>
-            <div style="width: 50px;"></div>
+            <img src="images/IMG_5596.jpeg" alt="Food Icon" class="header-image" onerror="handleImageError(this)">
+            <h1>🍽️ Food Plate Fean</h1>
+            <img src="images/IMG_5596.jpeg" alt="Food Icon" class="header-image" onerror="handleImageError(this)">
         </div>
+        
+        <div class="controls-top">
+            <div class="volume-control">
+                <label for="volumeSlider">🔊</label>
+                <input type="range" id="volumeSlider" min="0" max="100" value="30" aria-label="Background music volume">
+            </div>
+            <button class="music-toggle" id="musicToggle" onclick="toggleBackgroundMusic()" aria-label="Toggle background music" aria-pressed="true">🔊</button>
+        </div>
+        
         <div class="score">Matches: <span id="matches">0</span>/8</div>
-        <div class="game-board" id="gameBoard"></div>
+        <div class="game-board" id="gameBoard" role="main" aria-label="Game board with matching cards"></div>
         <div class="controls">
             <button class="btn-reset" onclick="resetGame()">New Game</button>
         </div>
-        <div class="message" id="message"></div>
+        <div class="message" id="message" aria-live="polite" aria-atomic="true"></div>
     </div>
 
     <!-- Audio Elements -->
@@ -272,6 +321,12 @@
         let isChecking = false;
         let isMusicPlaying = true;
 
+        // Function to handle image loading errors
+        function handleImageError(img) {
+            console.warn(`Failed to load image: ${img.src}`);
+            img.style.display = 'none';
+        }
+
         // Function to play sounds
         function playSound(soundId) {
             const sound = document.getElementById(soundId);
@@ -289,18 +344,34 @@
             if (isMusicPlaying) {
                 backgroundMusic.pause();
                 musicToggle.textContent = '🔇';
+                musicToggle.setAttribute('aria-pressed', 'false');
                 isMusicPlaying = false;
             } else {
                 backgroundMusic.play().catch(err => console.log('Music play error:', err));
                 musicToggle.textContent = '🔊';
+                musicToggle.setAttribute('aria-pressed', 'true');
                 isMusicPlaying = true;
             }
         }
 
+        // Update background music volume
+        function updateMusicVolume() {
+            const backgroundMusic = document.getElementById('backgroundMusic');
+            const volumeSlider = document.getElementById('volumeSlider');
+            backgroundMusic.volume = volumeSlider.value / 100;
+        }
+
+        // Volume control event listener
+        document.addEventListener('DOMContentLoaded', () => {
+            const volumeSlider = document.getElementById('volumeSlider');
+            volumeSlider.addEventListener('input', updateMusicVolume);
+        });
+
         // Start background music on page load
         window.addEventListener('load', () => {
             const backgroundMusic = document.getElementById('backgroundMusic');
-            backgroundMusic.volume = 0.3; // Set volume to 30%
+            const volumeSlider = document.getElementById('volumeSlider');
+            backgroundMusic.volume = volumeSlider.value / 100;
             backgroundMusic.play().catch(err => console.log('Music autoplay blocked:', err));
         });
 
@@ -333,16 +404,17 @@
                 cardElement.className = 'card';
                 cardElement.dataset.index = index;
                 cardElement.dataset.name = card.name;
+                cardElement.setAttribute('aria-label', `Card ${index + 1} - ${matchedIndices.has(index) ? 'Matched' : flippedCards.includes(index) ? card.name : 'Hidden'}`);
 
                 if (matchedIndices.has(index)) {
                     cardElement.classList.add('flipped', 'matched');
-                    cardElement.innerHTML = `<img src="${card.img}" alt="${card.name}" onerror="this.style.display='none'">`;
+                    cardElement.innerHTML = `<img src="${card.img}" alt="${card.name}" onerror="handleImageError(this)">`;
                     cardElement.disabled = true;
                 } else if (flippedCards.includes(index)) {
                     cardElement.classList.add('flipped');
-                    cardElement.innerHTML = `<img src="${card.img}" alt="${card.name}" onerror="this.style.display='none'">`;
+                    cardElement.innerHTML = `<img src="${card.img}" alt="${card.name}" onerror="handleImageError(this)">`;
                 } else {
-                    cardElement.innerHTML = `<div class="card-back"><img src="images/IMG_6716.jpeg" alt="Card Back" onerror="this.style.display='none'"></div>`;
+                    cardElement.innerHTML = `<div class="card-back"><img src="images/IMG_6716.jpeg" alt="Card Back" onerror="handleImageError(this)"></div>`;
                 }
 
                 cardElement.addEventListener('click', () => flipCard(index, cardElement));
@@ -357,7 +429,8 @@
 
             flippedCards.push(index);
             cardElement.classList.add('flipped');
-            cardElement.innerHTML = `<img src="${gameCards[index].img}" alt="${gameCards[index].name}" onerror="this.style.display='none'">`;
+            cardElement.innerHTML = `<img src="${gameCards[index].img}" alt="${gameCards[index].name}" onerror="handleImageError(this)">`;
+            cardElement.setAttribute('aria-label', `Card ${index + 1} - ${gameCards[index].name}`);
 
             if (flippedCards.length === 2) {
                 isChecking = true;
@@ -383,7 +456,8 @@
                     // Game won - play win sound
                     setTimeout(() => {
                         playSound('winSound');
-                        document.getElementById('message').textContent = '🎉 You Won! Congratulations!';
+                        const messageElement = document.getElementById('message');
+                        messageElement.textContent = '🎉 You Won! Congratulations!';
                     }, 300);
                 }
             } else {
