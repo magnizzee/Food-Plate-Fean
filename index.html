@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Food Matching Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .header-image {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 2.5em;
+        }
+
+        .score {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 3em;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .card:hover:not(.matched) {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-back img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+            width: 100%;
+            height: 100%;
+        }
+
+        .card img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+            width: 100%;
+            height: 100%;
+        }
+
+        .card.flipped {
+            background: white;
+            border: 2px solid #667eea;
+        }
+
+        .card.flipped .card-back {
+            display: none;
+        }
+
+        .card.matched {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-reset:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .message {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #764ba2;
+            font-weight: bold;
+            min-height: 30px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            .header {
+                gap: 10px;
+            }
+
+            .header-image {
+                width: 50px;
+                height: 50px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .game-board {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+
+            .card {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="images/IMG_5596.jpeg" alt="Food Icon" class="header-image" onerror="this.style.display='none'">
+            <h1>🍽️ Food Match</h1>
+            <img src="images/IMG_5596.jpeg" alt="Food Icon" class="header-image" onerror="this.style.display='none'">
+        </div>
+        <div class="score">Matches: <span id="matches">0</span>/8</div>
+        <div class="game-board" id="gameBoard"></div>
+        <div class="controls">
+            <button class="btn-reset" onclick="resetGame()">New Game</button>
+        </div>
+        <div class="message" id="message"></div>
+    </div>
+
+    <script>
+        const foods = [
+            { name: 'fried_chicken', img: 'images/fried_chicken.jpeg' },
+            { name: 'curry_chicken', img: 'images/curry_chicken.jpeg' },
+            { name: 'bbq_chicken', img: 'images/bbq_chicken.jpeg' },
+            { name: 'chicken_nuggets', img: 'images/chicken_nuggets.jpeg' },
+            { name: 'mac_cheese', img: 'images/mac_cheese.jpeg' },
+            { name: 'cornbread', img: 'images/cornbread.jpeg' },
+            { name: 'collard_greens', img: 'images/collard_greens.jpeg' },
+            { name: 'banana_pudding', img: 'images/banana_pudding.jpeg' }
+        ];
+
+        let gameCards = [...foods, ...foods];
+        let matchedIndices = new Set();
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let isChecking = false;
+
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        function initGame() {
+            gameCards = shuffleArray([...foods, ...foods]);
+            flippedCards = [];
+            matchedIndices = new Set();
+            matchedPairs = 0;
+            isChecking = false;
+            document.getElementById('matches').textContent = '0';
+            document.getElementById('message').textContent = '';
+            renderBoard();
+        }
+
+        function renderBoard() {
+            const gameBoard = document.getElementById('gameBoard');
+            gameBoard.innerHTML = '';
+
+            gameCards.forEach((card, index) => {
+                const cardElement = document.createElement('button');
+                cardElement.className = 'card';
+                cardElement.dataset.index = index;
+                cardElement.dataset.name = card.name;
+
+                if (matchedIndices.has(index)) {
+                    cardElement.classList.add('flipped', 'matched');
+                    cardElement.innerHTML = `<img src="${card.img}" alt="${card.name}" onerror="this.style.display='none'">`;
+                    cardElement.disabled = true;
+                } else if (flippedCards.includes(index)) {
+                    cardElement.classList.add('flipped');
+                    cardElement.innerHTML = `<img src="${card.img}" alt="${card.name}" onerror="this.style.display='none'">`;
+                } else {
+                    cardElement.innerHTML = `<div class="card-back"><img src="images/IMG_6716.jpeg" alt="Card Back" onerror="this.style.display='none'"></div>`;
+                }
+
+                cardElement.addEventListener('click', () => flipCard(index, cardElement));
+                gameBoard.appendChild(cardElement);
+            });
+        }
+
+        function flipCard(index, cardElement) {
+            if (isChecking || flippedCards.includes(index) || matchedIndices.has(index)) {
+                return;
+            }
+
+            flippedCards.push(index);
+            cardElement.classList.add('flipped');
+            cardElement.innerHTML = `<img src="${gameCards[index].img}" alt="${gameCards[index].name}" onerror="this.style.display='none'">`;
+
+            if (flippedCards.length === 2) {
+                isChecking = true;
+                setTimeout(checkMatch, 800);
+            }
+        }
+
+        function checkMatch() {
+            const [index1, index2] = flippedCards;
+
+            if (gameCards[index1].name === gameCards[index2].name) {
+                matchedIndices.add(index1);
+                matchedIndices.add(index2);
+                matchedPairs++;
+                document.getElementById('matches').textContent = matchedPairs;
+                flippedCards = [];
+                renderBoard();
+
+                if (matchedPairs === foods.length) {
+                    document.getElementById('message').textContent = '🎉 You Won! Congratulations!';
+                }
+            } else {
+                flippedCards = [];
+                renderBoard();
+            }
+
+            isChecking = false;
+        }
+
+        function resetGame() {
+            initGame();
+        }
+
+        // Initialize the game when page loads
+        initGame();
+    </script>
+</body>
+</html>
