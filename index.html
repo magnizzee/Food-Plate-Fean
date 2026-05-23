@@ -34,9 +34,17 @@
         .header {
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
             gap: 15px;
             margin-bottom: 10px;
+        }
+
+        .header-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            flex: 1;
         }
 
         .header-image {
@@ -50,6 +58,26 @@
             text-align: center;
             color: #333;
             font-size: 2.5em;
+        }
+
+        .music-toggle {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .music-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
         }
 
         .score {
@@ -170,6 +198,10 @@
                 gap: 10px;
             }
 
+            .header-center {
+                gap: 10px;
+            }
+
             .header-image {
                 width: 50px;
                 height: 50px;
@@ -187,15 +219,25 @@
             .card {
                 font-size: 2em;
             }
+
+            .music-toggle {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2em;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <img src="images/IMG_5596.jpeg" alt="Food Icon" class="header-image" onerror="this.style.display='none'">
-            <h1>🍽️ Food Match</h1>
-            <img src="images/IMG_5596.jpeg" alt="Food Icon" class="header-image" onerror="this.style.display='none'">
+            <button class="music-toggle" id="musicToggle" onclick="toggleBackgroundMusic()">🔊</button>
+            <div class="header-center">
+                <img src="images/IMG_5596.jpeg" alt="Food Icon" class="header-image" onerror="this.style.display='none'">
+                <h1>🍽️ Food Match</h1>
+                <img src="images/IMG_5596.jpeg" alt="Food Icon" class="header-image" onerror="this.style.display='none'">
+            </div>
+            <div style="width: 50px;"></div>
         </div>
         <div class="score">Matches: <span id="matches">0</span>/8</div>
         <div class="game-board" id="gameBoard"></div>
@@ -206,6 +248,7 @@
     </div>
 
     <!-- Audio Elements -->
+    <audio id="backgroundMusic" src="sounds/background.mp3" loop></audio>
     <audio id="matchSound" src="sounds/match.mp3"></audio>
     <audio id="wrongSound" src="sounds/wrong.mp3"></audio>
     <audio id="winSound" src="sounds/win.mp3"></audio>
@@ -227,6 +270,7 @@
         let flippedCards = [];
         let matchedPairs = 0;
         let isChecking = false;
+        let isMusicPlaying = true;
 
         // Function to play sounds
         function playSound(soundId) {
@@ -237,11 +281,28 @@
             }
         }
 
-        // Alternative: Create and play audio programmatically
-        function playSoundProgrammatically(soundPath) {
-            const sound = new Audio(soundPath);
-            sound.play().catch(err => console.log('Sound play error:', err));
+        // Toggle background music
+        function toggleBackgroundMusic() {
+            const backgroundMusic = document.getElementById('backgroundMusic');
+            const musicToggle = document.getElementById('musicToggle');
+            
+            if (isMusicPlaying) {
+                backgroundMusic.pause();
+                musicToggle.textContent = '🔇';
+                isMusicPlaying = false;
+            } else {
+                backgroundMusic.play().catch(err => console.log('Music play error:', err));
+                musicToggle.textContent = '🔊';
+                isMusicPlaying = true;
+            }
         }
+
+        // Start background music on page load
+        window.addEventListener('load', () => {
+            const backgroundMusic = document.getElementById('backgroundMusic');
+            backgroundMusic.volume = 0.3; // Set volume to 30%
+            backgroundMusic.play().catch(err => console.log('Music autoplay blocked:', err));
+        });
 
         function shuffleArray(array) {
             const newArray = [...array];
